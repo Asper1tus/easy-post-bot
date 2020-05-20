@@ -43,6 +43,12 @@ def start_message(message):
     bot.send_message(message.chat.id, "Опять работать?(")
 
 
+@bot.message_handler(commands=['run'])
+def run_message(message):
+    Thread(target=publisher).start()
+    bot.send_message(message.chat.id, "К бою готов")
+
+
 @bot.message_handler(commands=['publish'])
 def run_message(message):
     publish()
@@ -80,7 +86,6 @@ def run_message(message):
 
 
 bot.remove_webhook()
-
 bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH,
                 certificate=open(WEBHOOK_SSL_CERT, 'r'))
 
