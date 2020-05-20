@@ -7,8 +7,8 @@ from aiohttp import web
 from threading import Thread
 from cat_api import CatApi
 
-
-bot = telebot.TeleBot(os.environ["TELEGRAM_TOKEN"])
+API_TOKEN = os.environ["TELEGRAM_TOKEN"]
+bot = telebot.TeleBot(API_TOKEN)
 channel_id = -1001409952434
 cat = CatApi()
 
@@ -16,14 +16,11 @@ WEBHOOK_HOST = ''
 WEBHOOK_PORT = 8443
 WEBHOOK_LISTEN = '0.0.0.0'
 
-WEBHOOK_SSL_CERT = './webhook_cert.pem'
-WEBHOOK_SSL_PRIV = './webhook_pkey.pem'
+WEBHOOK_SSL_CERT = './certs/webhook_cert.pem'
+WEBHOOK_SSL_PRIV = './certs/webhook_pkey.pem'
 
 WEBHOOK_URL_BASE = "https://{}:{}".format(WEBHOOK_HOST, WEBHOOK_PORT)
 WEBHOOK_URL_PATH = "/{}/".format(API_TOKEN)
-
-logger = telebot.logger
-telebot.logger.setLevel(logging.INFO)
 
 app = web.Application()
 
@@ -36,13 +33,24 @@ async def handle(request):
     else:
         return web.Response(status=403)
 
-
 app.router.add_post('/{token}/', handle)
+
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    Thread(target=publisher).start()
     bot.send_message(message.chat.id, "Опять работать?(")
+
+
+@bot.message_handler(commands=['run'])
+def run_message(message):
+    Thread(target=publisher).start()
+    bot.send_message(message.chat.id, "К бою готов")
+
+
+@bot.message_handler(commands=['publish'])
+def run_message(message):
+    publish()
+    bot.send_message(message.chat.id, "Ты, что ль, король? Я за тебя не голосовал!")
 
 
 def publish():
@@ -61,7 +69,6 @@ def publisher():
         time.sleep(1)
 
 bot.remove_webhook()
-
 bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH,
                 certificate=open(WEBHOOK_SSL_CERT, 'r'))
 
